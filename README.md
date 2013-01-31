@@ -1,8 +1,8 @@
 Heroku buildpack: Node.js
 =========================
 
-This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) for Node.js apps.
-It uses [NPM](http://npmjs.org/) and [SCons](http://www.scons.org/).
+This is a modified version of the [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) for Node.js apps.
+It adds Nginx as a transparent proxy in front of Node.js and has Microcaching functionality.
 
 Usage
 -----
