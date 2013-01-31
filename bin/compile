@@ -157,7 +157,11 @@ echo "-----> Fetching Node.js binaries"
 package_download "nodejs" "${NODE_VERSION}" "${VENDORED_NODE}"
 package_download "npm" "${NPM_VERSION}" "${VENDORED_NPM}"
 package_download "scons" "${SCONS_VERSION}" "${VENDORED_SCONS}"
-package_download "nginx" "${NGINX_VERSION}" "${VENDORED_NGINX}"
+# package_download "nginx" "${NGINX_VERSION}" "${VENDORED_NGINX}"
+
+mkdir -p $VENDORED_NGINX
+  package=$NGINX_PACKAGE
+  curl $package -s -o - | tar xzf - -C $VENDORED_NGINX
 
 # vendor node into the slug
 PATH="$BUILD_DIR/bin:$PATH"
