@@ -13,6 +13,7 @@ unset GIT_DIR
 # config
 SCONS_VERSION="1.2.0"
 S3_BUCKET="heroku-buildpack-nodejs"
+NGINX_VERSION="1.2.6"
 
 # parse and derive params
 BUILD_DIR=$1
@@ -143,17 +144,20 @@ CACHE_TARGET_DIR="$BUILD_DIR/node_modules"
 NODE_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/nodejs-${NODE_VERSION}.tgz"
 NPM_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/npm-${NPM_VERSION}.tgz"
 SCONS_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/scons-${SCONS_VERSION}.tgz"
+NGINX_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/nginx-${NGINX_VERSION}.tgz"
 
 # vendor directories
 VENDORED_NODE="$(mktmpdir node)"
 VENDORED_NPM="$(mktmpdir npm)"
 VENDORED_SCONS="$(mktmpdir scons)"
+VENDORED_NGINX="$(mktmpdir nginx)"
 
 # download and unpack packages
 echo "-----> Fetching Node.js binaries"
 package_download "nodejs" "${NODE_VERSION}" "${VENDORED_NODE}"
 package_download "npm" "${NPM_VERSION}" "${VENDORED_NPM}"
 package_download "scons" "${SCONS_VERSION}" "${VENDORED_SCONS}"
+package_download "nginx" "${NGINX_VERSION}" "${VENRORED_NGINX}"
 
 # vendor node into the slug
 PATH="$BUILD_DIR/bin:$PATH"
@@ -176,3 +180,19 @@ echo "Dependencies installed" | indent
 echo "-----> Building runtime environment"
 mkdir -p $BUILD_DIR/.profile.d
 echo "export PATH=\"\$HOME/bin:\$HOME/node_modules/.bin:\$PATH\"" > $BUILD_DIR/.profile.d/nodejs.sh
+
+# vendor nginx into the slug
+echo "-----> Vendoring nginx $NGINX_VERSION"
+mkdir -p "$BUILD_DIR/bin"
+cp "$VENDORED_NGINX/sbin/nginx" "$BUILD_DIR/bin/nginx"
+
+# build a startup script
+cat <<EOF >"$BUILD_DIR/bin/start_nginx"
+#!/usr/bin/env bash
+erb conf/nginx.conf.erb > conf/nginx.conf
+mkdir -p logs
+touch logs/access.log logs/error.log
+(tail -qF -n 0 --pid=\$\$ logs/*.log &)
+exec bin/nginx -p .
+EOF
+chmod +x "$BUILD_DIR/bin/start_nginx"
